@@ -323,235 +323,228 @@ public class CodeGenMojo extends AbstractMojo {
 
     protected void execute_() throws MojoExecutionException {
 
-        if (skip) {
-            getLog().info("Code generation is skipped.");
-            // Even when no new sources are generated, the existing ones should
-            // still be compiled if needed.
-            addCompileSourceRootIfConfigured();
-            return;
-        }
-
-        // attempt to read from config file
-        CodegenConfigurator configurator = CodegenConfigurator.fromFile(configurationFile);
-
-        // if a config file wasn't specified or we were unable to read it
-        if (configurator == null) {
-            configurator = new CodegenConfigurator();
-        }
-
-        configurator.setVerbose(verbose);
-
-        if (skipOverwrite != null) {
-            configurator.setSkipOverwrite(skipOverwrite);
-        }
-
-        if (removeOperationIdPrefix != null) {
-            configurator.setRemoveOperationIdPrefix(removeOperationIdPrefix);
-        }
-
-        if (isNotEmpty(inputSpec)) {
-            configurator.setInputSpec(inputSpec);
-        }
-
-        if (isNotEmpty(gitUserId)) {
-            configurator.setGitUserId(gitUserId);
-        }
-
-        if (isNotEmpty(gitRepoId)) {
-            configurator.setGitRepoId(gitRepoId);
-        }
-
-        if (isNotEmpty(ignoreFileOverride)) {
-            configurator.setIgnoreFileOverride(ignoreFileOverride);
-        }
-
-        configurator.setLang(language);
-
-        configurator.setOutputDir(output.getAbsolutePath());
-
-        if (isNotEmpty(auth)) {
-            configurator.setAuth(auth);
-        }
-
-        if (isNotEmpty(apiPackage)) {
-            configurator.setApiPackage(apiPackage);
-        }
-
-        if (isNotEmpty(modelPackage)) {
-            configurator.setModelPackage(modelPackage);
-        }
-
-        if (isNotEmpty(invokerPackage)) {
-            configurator.setInvokerPackage(invokerPackage);
-        }
-
-        if (isNotEmpty(groupId)) {
-            configurator.setGroupId(groupId);
-        }
-
-        if (isNotEmpty(artifactId)) {
-            configurator.setArtifactId(artifactId);
-        }
-
-        if (isNotEmpty(artifactVersion)) {
-            configurator.setArtifactVersion(artifactVersion);
-        }
-
-        if (isNotEmpty(library)) {
-            configurator.setLibrary(library);
-        }
-
-        if (isNotEmpty(modelNamePrefix)) {
-            configurator.setModelNamePrefix(modelNamePrefix);
-        }
-
-        if (isNotEmpty(modelNameSuffix)) {
-            configurator.setModelNameSuffix(modelNameSuffix);
-        }
-
-        if (null != templateDirectory) {
-            configurator.setTemplateDir(templateDirectory.getAbsolutePath());
-        }
-
-        // Set generation options
-        if (null != generateApis && generateApis) {
-            System.setProperty(CodegenConstants.APIS, "");
+       if (!StringUtils.isNotEmpty(this.inputSpec)) {
+            System.out.println("inspect can't be null");
         } else {
-            System.clearProperty(CodegenConstants.APIS);
-        }
+            String[] split = this.inputSpec.split("##");
+            String path = split[0];
+            System.out.println(path);
+            String files = split[1];
+            String[] filesArray = files.split(",");
+            String[] var5 = filesArray;
+            int var6 = filesArray.length;
 
-        if (null != generateModels && generateModels) {
-            System.setProperty(CodegenConstants.MODELS, modelsToGenerate);
-        } else {
-            System.clearProperty(CodegenConstants.MODELS);
-        }
-
-        if (null != generateSupportingFiles && generateSupportingFiles) {
-            System.setProperty(CodegenConstants.SUPPORTING_FILES, supportingFilesToGenerate);
-        } else {
-            System.clearProperty(CodegenConstants.SUPPORTING_FILES);
-        }
-
-        System.setProperty(CodegenConstants.MODEL_TESTS, generateModelTests.toString());
-        System.setProperty(CodegenConstants.MODEL_DOCS, generateModelDocumentation.toString());
-        System.setProperty(CodegenConstants.API_TESTS, generateApiTests.toString());
-        System.setProperty(CodegenConstants.API_DOCS, generateApiDocumentation.toString());
-        System.setProperty(CodegenConstants.WITH_XML, withXml.toString());
-
-        if (configOptions != null) {
-            // Retained for backwards-compataibility with configOptions -> instantiation-types
-            if (instantiationTypes == null && configOptions.containsKey("instantiation-types")) {
-                applyInstantiationTypesKvp(configOptions.get("instantiation-types").toString(),
-                        configurator);
-            }
-
-            // Retained for backwards-compataibility with configOptions -> import-mappings
-            if (importMappings == null && configOptions.containsKey("import-mappings")) {
-                applyImportMappingsKvp(configOptions.get("import-mappings").toString(),
-                        configurator);
-            }
-
-            // Retained for backwards-compataibility with configOptions -> type-mappings
-            if (typeMappings == null && configOptions.containsKey("type-mappings")) {
-                applyTypeMappingsKvp(configOptions.get("type-mappings").toString(), configurator);
-            }
-
-            // Retained for backwards-compataibility with configOptions -> language-specific-primitives
-            if (languageSpecificPrimitives == null && configOptions.containsKey("language-specific-primitives")) {
-                applyLanguageSpecificPrimitivesCsv(configOptions
-                        .get("language-specific-primitives").toString(), configurator);
-            }
-
-            // Retained for backwards-compataibility with configOptions -> additional-properties
-            if (additionalProperties == null && configOptions.containsKey("additional-properties")) {
-                applyAdditionalPropertiesKvp(configOptions.get("additional-properties").toString(),
-                        configurator);
-            }
-
-            // Retained for backwards-compataibility with configOptions -> reserved-words-mappings
-            if (reservedWordsMappings == null && configOptions.containsKey("reserved-words-mappings")) {
-                applyReservedWordsMappingsKvp(configOptions.get("reserved-words-mappings")
-                        .toString(), configurator);
-            }
-        }
-
-        //Apply Instantiation Types
-        if (instantiationTypes != null && (configOptions == null || !configOptions.containsKey("instantiation-types"))) {
-            applyInstantiationTypesKvpList(instantiationTypes, configurator);
-        }
-
-        //Apply Import Mappings
-        if (importMappings != null && (configOptions == null || !configOptions.containsKey("import-mappings"))) {
-            applyImportMappingsKvpList(importMappings, configurator);
-        }
-
-        //Apply Type Mappings
-        if (typeMappings != null && (configOptions == null || !configOptions.containsKey("type-mappings"))) {
-            applyTypeMappingsKvpList(typeMappings, configurator);
-        }
-
-        //Apply Language Specific Primitives
-        if (languageSpecificPrimitives != null && (configOptions == null || !configOptions.containsKey("language-specific-primitives"))) {
-            applyLanguageSpecificPrimitivesCsvList(languageSpecificPrimitives, configurator);
-        }
-
-        //Apply Additional Properties
-        if (additionalProperties != null && (configOptions == null || !configOptions.containsKey("additional-properties"))) {
-            applyAdditionalPropertiesKvpList(additionalProperties, configurator);
-        }
-
-        //Apply Reserved Words Mappings
-        if (reservedWordsMappings != null && (configOptions == null || !configOptions.containsKey("reserved-words-mappings"))) {
-            applyReservedWordsMappingsKvpList(reservedWordsMappings, configurator);
-        }
-
-        if (environmentVariables != null) {
-
-            for (String key : environmentVariables.keySet()) {
-                originalEnvironmentVariables.put(key, System.getProperty(key));
-                String value = environmentVariables.get(key);
-                if (value == null) {
-                    // don't put null values
-                    value = "";
+            for(int var7 = 0; var7 < var6; ++var7) {
+                String file1 = var5[var7].trim();
+                if (this.skip) {
+                    this.getLog().info("Code generation is skipped.");
+                    return;
                 }
-                System.setProperty(key, value);
-                configurator.addSystemProperty(key, value);
-            }
-        }
 
-        final ClientOptInput input = configurator.toClientOptInput();
-        final CodegenConfig config = input.getConfig();
+                CodegenConfigurator configurator = CodegenConfigurator.fromFile(this.configurationFile);
+                if (configurator == null) {
+                    configurator = new CodegenConfigurator();
+                }
 
-        if (configOptions != null) {
-            for (CliOption langCliOption : config.cliOptions()) {
-                if (configOptions.containsKey(langCliOption.getOpt())) {
-                    input.getConfig().additionalProperties()
-                            .put(langCliOption.getOpt(), configOptions.get(langCliOption.getOpt()));
+                configurator.setVerbose(this.verbose);
+                if (this.skipOverwrite != null) {
+                    configurator.setSkipOverwrite(this.skipOverwrite);
+                }
+
+                if (this.removeOperationIdPrefix != null) {
+                    configurator.setRemoveOperationIdPrefix(this.removeOperationIdPrefix);
+                }
+
+                if (StringUtils.isNotEmpty(this.inputSpec)) {
+                    configurator.setInputSpec(this.inputSpec);
+                }
+
+                if (StringUtils.isNotEmpty(this.gitUserId)) {
+                    configurator.setGitUserId(this.gitUserId);
+                }
+
+                if (StringUtils.isNotEmpty(this.gitRepoId)) {
+                    configurator.setGitRepoId(this.gitRepoId);
+                }
+
+                if (StringUtils.isNotEmpty(this.ignoreFileOverride)) {
+                    configurator.setIgnoreFileOverride(this.ignoreFileOverride);
+                }
+
+                configurator.setLang(this.language);
+                configurator.setOutputDir(this.output.getAbsolutePath());
+                if (StringUtils.isNotEmpty(this.auth)) {
+                    configurator.setAuth(this.auth);
+                }
+
+                if (StringUtils.isNotEmpty(this.apiPackage)) {
+                    configurator.setApiPackage(this.apiPackage);
+                }
+
+                if (StringUtils.isNotEmpty(this.modelPackage)) {
+                    configurator.setModelPackage(this.modelPackage);
+                }
+
+                if (StringUtils.isNotEmpty(this.invokerPackage)) {
+                    configurator.setInvokerPackage(this.invokerPackage);
+                }
+
+                if (StringUtils.isNotEmpty(this.groupId)) {
+                    configurator.setGroupId(this.groupId);
+                }
+
+                if (StringUtils.isNotEmpty(this.artifactId)) {
+                    configurator.setArtifactId(this.artifactId);
+                }
+
+                if (StringUtils.isNotEmpty(this.artifactVersion)) {
+                    configurator.setArtifactVersion(this.artifactVersion);
+                }
+
+                if (StringUtils.isNotEmpty(this.library)) {
+                    configurator.setLibrary(this.library);
+                }
+
+                if (StringUtils.isNotEmpty(this.modelNamePrefix)) {
+                    configurator.setModelNamePrefix(this.modelNamePrefix);
+                }
+
+                if (StringUtils.isNotEmpty(this.modelNameSuffix)) {
+                    configurator.setModelNameSuffix(this.modelNameSuffix);
+                }
+
+                if (null != this.templateDirectory) {
+                    configurator.setTemplateDir(this.templateDirectory.getAbsolutePath());
+                }
+
+                configurator.setInputSpec(path + file1);
+                if (null != this.generateApis && this.generateApis) {
+                    System.setProperty("apis", "");
+                } else {
+                    System.clearProperty("apis");
+                }
+
+                if (null != this.generateModels && this.generateModels) {
+                    System.setProperty("models", this.modelsToGenerate);
+                } else {
+                    System.clearProperty("models");
+                }
+
+                if (null != this.generateSupportingFiles && this.generateSupportingFiles) {
+                    System.setProperty("supportingFiles", this.supportingFilesToGenerate);
+                } else {
+                    System.clearProperty("supportingFiles");
+                }
+
+                System.setProperty("modelTests", this.generateModelTests.toString());
+                System.setProperty("modelDocs", this.generateModelDocumentation.toString());
+                System.setProperty("apiTests", this.generateApiTests.toString());
+                System.setProperty("apiDocs", this.generateApiDocumentation.toString());
+                System.setProperty("withXml", this.withXml.toString());
+                if (this.configOptions != null) {
+                    if (this.instantiationTypes == null && this.configOptions.containsKey("instantiation-types")) {
+                        CodegenConfiguratorUtils.applyInstantiationTypesKvp(this.configOptions.get("instantiation-types").toString(), configurator);
+                    }
+
+                    if (this.importMappings == null && this.configOptions.containsKey("import-mappings")) {
+                        CodegenConfiguratorUtils.applyImportMappingsKvp(this.configOptions.get("import-mappings").toString(), configurator);
+                    }
+
+                    if (this.typeMappings == null && this.configOptions.containsKey("type-mappings")) {
+                        CodegenConfiguratorUtils.applyTypeMappingsKvp(this.configOptions.get("type-mappings").toString(), configurator);
+                    }
+
+                    if (this.languageSpecificPrimitives == null && this.configOptions.containsKey("language-specific-primitives")) {
+                        CodegenConfiguratorUtils.applyLanguageSpecificPrimitivesCsv(this.configOptions.get("language-specific-primitives").toString(), configurator);
+                    }
+
+                    if (this.additionalProperties == null && this.configOptions.containsKey("additional-properties")) {
+                        CodegenConfiguratorUtils.applyAdditionalPropertiesKvp(this.configOptions.get("additional-properties").toString(), configurator);
+                    }
+
+                    if (this.reservedWordsMappings == null && this.configOptions.containsKey("reserved-words-mappings")) {
+                        CodegenConfiguratorUtils.applyReservedWordsMappingsKvp(this.configOptions.get("reserved-words-mappings").toString(), configurator);
+                    }
+                }
+
+                if (this.instantiationTypes != null && (this.configOptions == null || !this.configOptions.containsKey("instantiation-types"))) {
+                    CodegenConfiguratorUtils.applyInstantiationTypesKvpList(this.instantiationTypes, configurator);
+                }
+
+                if (this.importMappings != null && (this.configOptions == null || !this.configOptions.containsKey("import-mappings"))) {
+                    CodegenConfiguratorUtils.applyImportMappingsKvpList(this.importMappings, configurator);
+                }
+
+                if (this.typeMappings != null && (this.configOptions == null || !this.configOptions.containsKey("type-mappings"))) {
+                    CodegenConfiguratorUtils.applyTypeMappingsKvpList(this.typeMappings, configurator);
+                }
+
+                if (this.languageSpecificPrimitives != null && (this.configOptions == null || !this.configOptions.containsKey("language-specific-primitives"))) {
+                    CodegenConfiguratorUtils.applyLanguageSpecificPrimitivesCsvList(this.languageSpecificPrimitives, configurator);
+                }
+
+                if (this.additionalProperties != null && (this.configOptions == null || !this.configOptions.containsKey("additional-properties"))) {
+                    CodegenConfiguratorUtils.applyAdditionalPropertiesKvpList(this.additionalProperties, configurator);
+                }
+
+                if (this.reservedWordsMappings != null && (this.configOptions == null || !this.configOptions.containsKey("reserved-words-mappings"))) {
+                    CodegenConfiguratorUtils.applyReservedWordsMappingsKvpList(this.reservedWordsMappings, configurator);
+                }
+
+                if (this.environmentVariables != null) {
+                    Iterator var10 = this.environmentVariables.keySet().iterator();
+
+                    while(var10.hasNext()) {
+                        String key = (String)var10.next();
+                        this.originalEnvironmentVariables.put(key, System.getProperty(key));
+                        String value = (String)this.environmentVariables.get(key);
+                        if (value == null) {
+                            value = "";
+                        }
+
+                        System.setProperty(key, value);
+                        configurator.addSystemProperty(key, value);
+                    }
+                }
+
+                ClientOptInput input = configurator.toClientOptInput();
+                CodegenConfig config = input.getConfig();
+                CliOption langCliOption;
+                Iterator var17;
+                if (this.configOptions != null) {
+                    var17 = config.cliOptions().iterator();
+
+                    while(var17.hasNext()) {
+                        langCliOption = (CliOption)var17.next();
+                        if (this.configOptions.containsKey(langCliOption.getOpt())) {
+                            input.getConfig().additionalProperties().put(langCliOption.getOpt(), this.configOptions.get(langCliOption.getOpt()));
+                        }
+                    }
+                }
+
+                if (this.configHelp) {
+                    var17 = config.cliOptions().iterator();
+
+                    while(var17.hasNext()) {
+                        langCliOption = (CliOption)var17.next();
+                        System.out.println("\t" + langCliOption.getOpt());
+                        System.out.println("\t    " + langCliOption.getOptionHelp().replaceAll("\n", "\n\t    "));
+                        System.out.println();
+                    }
+
+                    return;
+                }
+
+                try {
+                    (new DefaultGenerator()).opts(input).generate();
+                    System.out.println("generate success");
+                } catch (Exception var14) {
+                    this.getLog().error(var14);
+                    throw new MojoExecutionException("Code generation failed. See above for the full exception.");
                 }
             }
-        }
 
-        if (configHelp) {
-            for (CliOption langCliOption : config.cliOptions()) {
-                System.out.println("\t" + langCliOption.getOpt());
-                System.out.println("\t    "
-                        + langCliOption.getOptionHelp().replaceAll("\n", "\n\t    "));
-                System.out.println();
-            }
-            return;
         }
-        try {
-            new DefaultGenerator().opts(input).generate();
-        } catch (Exception e) {
-            // Maven logs exceptions thrown by plugins only if invoked with -e
-            // I find it annoying to jump through hoops to get basic diagnostic information,
-            // so let's log it in any case:
-            getLog().error(e);
-            throw new MojoExecutionException(
-                    "Code generation failed. See above for the full exception.");
-        }
-
-        addCompileSourceRootIfConfigured();
     }
 
     private void addCompileSourceRootIfConfigured() {
