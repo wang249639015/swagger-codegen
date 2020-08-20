@@ -405,6 +405,12 @@ public class DefaultGenerator extends AbstractGenerator implements Generator {
 
         // generate files based on processed models
         for (String modelName : allProcessedModels.keySet()) {
+            // add by willing 生成的模块不包含多余部分。
+            if (modelName.contains("2")){
+                continue;
+            }
+            
+            
             Map<String, Object> models = (Map<String, Object>) allProcessedModels.get(modelName);
             models.put("modelPackage", config.modelPackage());
             try {
