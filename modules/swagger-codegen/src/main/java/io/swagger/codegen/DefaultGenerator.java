@@ -1037,6 +1037,16 @@ public class DefaultGenerator extends AbstractGenerator implements Generator {
                 mapping = config.toModelImport(nextImport);
             }
             if (mapping != null) {
+                                /**
+                 * edit_by_wll : 删除import是中含有2后缀的引用。
+                 * reason :
+                 * who: willing
+                 * phone: 13350668626
+                 * date: 20-8-17-下午3:41
+                 */
+                if (mapping.endsWith("2")) {
+                    continue;
+                }
                 im.put("import", mapping);
                 if (!imports.contains(im)) { // avoid duplicates
                     imports.add(im);
