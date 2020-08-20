@@ -486,6 +486,21 @@ public class DefaultGenerator extends AbstractGenerator implements Generator {
                         return ObjectUtils.compare(one.operationId, another.operationId);
                     }
                 });
+                
+                // edit by willing 不生成参数体带2的入参。
+                for (CodegenOperation op : ops) {
+                    if (op.bodyParam==null) {
+                        continue;
+                    }
+                    String dataType = op.bodyParam.dataType;
+                    if(!dataType.contains("2")){
+                        continue;
+                    }
+                    op.bodyParam.dataType = dataType.substring(0, dataType.length() - 1);
+                }
+                
+                
+                
                 Map<String, Object> operation = processOperations(config, tag, ops, allModels);
 
                 operation.put("hostWithoutBasePath", getHostWithoutBasePath());
@@ -511,7 +526,8 @@ public class DefaultGenerator extends AbstractGenerator implements Generator {
                     sortParamsByRequiredFlag = Boolean.valueOf(this.config.additionalProperties().get(CodegenConstants.SORT_PARAMS_BY_REQUIRED_FLAG).toString());
                 }
                 operation.put("sortParamsByRequiredFlag", sortParamsByRequiredFlag);
-
+                //edit by willing 增加代理生成的flag
+                operation.put("isDelegate",true);
                 processMimeTypes(swagger.getConsumes(), operation, "consumes");
                 processMimeTypes(swagger.getProduces(), operation, "produces");
 
@@ -533,6 +549,14 @@ public class DefaultGenerator extends AbstractGenerator implements Generator {
                     File written = processTemplateToFile(operation, templateName, filename);
                     if (written != null) {
                         files.add(written);
+                    }
+                    // add by willing 增加代理实现类的标签。
+                    if (templateName.equals("api.mustache")) {
+                        int i = filename.lastIndexOf(".");
+                        File written_interface = processTemplateToFile(operation, "apiDelegate.mustache", filename.substring(0,i)+"Delegate.java");
+                        if (written != null) {
+                            files.add(written_interface);
+                        }
                     }
                 }
 
