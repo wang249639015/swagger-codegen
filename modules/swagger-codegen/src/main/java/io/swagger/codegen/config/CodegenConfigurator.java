@@ -435,6 +435,21 @@ public class CodegenConfigurator implements Serializable {
         final List<AuthorizationValue> authorizationValues = AuthParser.parse(auth);
 
         Swagger swagger = new SwaggerParser().read(inputSpec, authorizationValues, true);
+        
+        Map<String, Model> definitions = swagger.getDefinitions();
+        Map<String, Model> newDefinitions =new HashMap<>();
+
+        Set<String> strings = definitions.keySet();
+        for (String string : strings) {
+            if (string.endsWith("2")) {
+                continue;
+            }
+            newDefinitions.put(string,definitions.get(string));
+        }
+
+
+
+        swagger.setDefinitions(newDefinitions);
 
         input.opts(new ClientOpts())
                 .swagger(swagger);
